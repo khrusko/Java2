@@ -1,27 +1,30 @@
 package hr.algebra.khruskoj2.controller;
 
+import hr.algebra.khruskoj2.controller.ResultScreenController;
 import hr.algebra.khruskoj2.data.QuestionRepository;
 import hr.algebra.khruskoj2.model.Question;
+import javafx.animation.PauseTransition;
+import javafx.application.Platform;
+import javafx.concurrent.Task;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
-import javafx.scene.Scene;
 import javafx.scene.control.Label;
 import javafx.scene.control.ListView;
-import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.Pane;
 import javafx.stage.Stage;
+import javafx.util.Duration;
 
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import javafx.animation.PauseTransition;
-import javafx.util.Duration;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 public class GameScreenController {
 
@@ -59,6 +62,7 @@ public class GameScreenController {
     private Pane pMainContent;
 
     private static GameScreenController instance;
+    private ExecutorService executorService;
 
     public static GameScreenController getInstance() {
         return instance;
@@ -128,51 +132,55 @@ public class GameScreenController {
         }
 
         if (selectedAnswer.equals(correctAnswer)) {
-            //Answer correct
+            // Answer correct
             correctAnswers++;
-            PauseTransition delay = new PauseTransition(Duration.seconds(1));
-            delay.setOnFinished(event -> {
-                if (currentQuestionIndex < questions.size() - 1) {
-                    showNextQuestion();
-                } else {
-                    // All questions have been answered
-                    showResultScreen();
-                }
-                btnAnswer1.setStyle(defaultStyle);
-                btnAnswer2.setStyle(defaultStyle);
-                btnAnswer3.setStyle(defaultStyle);
-                btnAnswer4.setStyle(defaultStyle);
+            Platform.runLater(() -> {
+                PauseTransition delay = new PauseTransition(Duration.seconds(1));
+                delay.setOnFinished(event -> {
+                    if (currentQuestionIndex < questions.size() - 1) {
+                        showNextQuestion();
+                    } else {
+                        // All questions have been answered
+                        showResultScreen();
+                    }
+                    btnAnswer1.setStyle(defaultStyle);
+                    btnAnswer2.setStyle(defaultStyle);
+                    btnAnswer3.setStyle(defaultStyle);
+                    btnAnswer4.setStyle(defaultStyle);
+                });
+                delay.play();
             });
-            delay.play();
         } else {
-            //Answer wrong
+            // Answer wrong
             wrongAnswers++;
-            Label selectedLabel;
-            if (selectedAnswer.equals(btnAnswer1.getText())) {
-                selectedLabel = btnAnswer1;
-            } else if (selectedAnswer.equals(btnAnswer2.getText())) {
-                selectedLabel = btnAnswer2;
-            } else if (selectedAnswer.equals(btnAnswer3.getText())) {
-                selectedLabel = btnAnswer3;
-            } else {
-                selectedLabel = btnAnswer4;
-            }
-            selectedLabel.setStyle(incorrectStyle);
-
-            PauseTransition delay = new PauseTransition(Duration.seconds(1));
-            delay.setOnFinished(event -> {
-                if (currentQuestionIndex < questions.size() - 1) {
-                    showNextQuestion();
+            Platform.runLater(() -> {
+                Label selectedLabel;
+                if (selectedAnswer.equals(btnAnswer1.getText())) {
+                    selectedLabel = btnAnswer1;
+                } else if (selectedAnswer.equals(btnAnswer2.getText())) {
+                    selectedLabel = btnAnswer2;
+                } else if (selectedAnswer.equals(btnAnswer3.getText())) {
+                    selectedLabel = btnAnswer3;
                 } else {
-                    // All questions have been answered
-                    showResultScreen();
+                    selectedLabel = btnAnswer4;
                 }
-                btnAnswer1.setStyle(defaultStyle);
-                btnAnswer2.setStyle(defaultStyle);
-                btnAnswer3.setStyle(defaultStyle);
-                btnAnswer4.setStyle(defaultStyle);
+                selectedLabel.setStyle(incorrectStyle);
+
+                PauseTransition delay = new PauseTransition(Duration.seconds(1));
+                delay.setOnFinished(event -> {
+                    if (currentQuestionIndex < questions.size() - 1) {
+                        showNextQuestion();
+                    } else {
+                        // All questions have been answered
+                        showResultScreen();
+                    }
+                    btnAnswer1.setStyle(defaultStyle);
+                    btnAnswer2.setStyle(defaultStyle);
+                    btnAnswer3.setStyle(defaultStyle);
+                    btnAnswer4.setStyle(defaultStyle);
+                });
+                delay.play();
             });
-            delay.play();
         }
     }
 
@@ -185,20 +193,22 @@ public class GameScreenController {
     private void showCurrentQuestion() {
         if (currentQuestionIndex < questions.size()) {
             Question currentQuestion = questions.get(currentQuestionIndex);
-            lblQuestion.setText(currentQuestion.getQuestion());
-            lblQuestionNumber.setText("QUESTION " + (currentQuestionIndex + 1) + "/15");
+            Platform.runLater(() -> {
+                lblQuestion.setText(currentQuestion.getQuestion());
+                lblQuestionNumber.setText("QUESTION " + (currentQuestionIndex + 1) + "/15");
 
-            List<String> answerOptions = new ArrayList<>(currentQuestion.getWrongAnswers()); // Create a new list for answer options
-            answerOptions.add(currentQuestion.getCorrectAnswer());
-            Collections.shuffle(answerOptions);
+                List<String> answerOptions = new ArrayList<>(currentQuestion.getWrongAnswers()); // Create a new list for answer options
+                answerOptions.add(currentQuestion.getCorrectAnswer());
+                Collections.shuffle(answerOptions);
 
-            btnAnswer1.setText(answerOptions.get(0));
-            btnAnswer2.setText(answerOptions.get(1));
-            btnAnswer3.setText(answerOptions.get(2));
-            btnAnswer4.setText(answerOptions.get(3));
+                btnAnswer1.setText(answerOptions.get(0));
+                btnAnswer2.setText(answerOptions.get(1));
+                btnAnswer3.setText(answerOptions.get(2));
+                btnAnswer4.setText(answerOptions.get(3));
+            });
         } else {
             // All questions have been answered
-            showResultScreen();
+            Platform.runLater(this::showResultScreen);
         }
     }
 
@@ -207,16 +217,14 @@ public class GameScreenController {
             FXMLLoader loader = new FXMLLoader(getClass().getResource("/hr/algebra/khruskoj2/resultScreen.fxml"));
             Parent root = loader.load();
 
-            // Get the controller of the result screen
             ResultScreenController resultScreenController = loader.getController();
 
-            // Perform any necessary operations or pass data to the result screen controller
-            // For example, you can call a method on the result screen controller
-            resultScreenController.setResultData(correctAnswers, wrongAnswers);
+            resultScreenController.setResultData(correctAnswers, wrongAnswers, player1Name, player2Name);
 
-            // Set the loaded pane as the content of pMainContent
-            pMainContent.getChildren().clear();
-            pMainContent.getChildren().add(root);
+            Platform.runLater(() -> {
+                pMainContent.getChildren().clear();
+                pMainContent.getChildren().add(root);
+            });
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -226,25 +234,52 @@ public class GameScreenController {
     void messageTextFieldKeyPressed(KeyEvent event) {
         if (event.getCode() == KeyCode.ENTER) {
             String message = messageTextField.getText();
-            // TODO: Differentiate between players and display their name and message
-            chatListView.getItems().add(player1Name+": " + message);
+
+            Platform.runLater(() -> {
+                // TODO: Differentiate between players and display their name and message
+                chatListView.getItems().add(player1Name + ": " + message);
+            });
 
             messageTextField.clear();
         }
     }
 
+    public synchronized void loadQuestionsAsync() {
+        Task<List<Question>> task = new Task<List<Question>>() {
+            @Override
+            protected List<Question> call() throws Exception {
+                QuestionRepository questionRepository = new QuestionRepository();
+                return questionRepository.getAllQuestions();
+            }
+        };
 
-    public void loadQuestions() {
-        QuestionRepository questionRepository = new QuestionRepository();
-        questions = questionRepository.getAllQuestions();
-        Collections.shuffle(questions); // Shuffle the questions randomly
-        currentQuestionIndex = 0;
-        showCurrentQuestion();
+        task.setOnSucceeded(event -> {
+            questions = task.getValue();
+            Collections.shuffle(questions); // Shuffle the questions randomly
+            currentQuestionIndex = 0;
+            showCurrentQuestion();
+        });
+
+        task.setOnFailed(event -> {
+            Throwable exception = task.getException();
+            // Handle the exception
+            exception.printStackTrace();
+        });
+
+        executorService.submit(task);
     }
 
     @FXML
     public void initialize() {
+
         instance = this;
-        loadQuestions();
+        executorService = Executors.newSingleThreadExecutor();
+        loadQuestionsAsync();
+        shutdownExecutorService();
+    }
+
+
+    public void shutdownExecutorService() {
+        executorService.shutdownNow();
     }
 }

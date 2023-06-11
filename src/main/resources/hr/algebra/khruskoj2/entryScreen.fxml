@@ -13,7 +13,7 @@
                 <Font name="Berlin Sans FB Demi Bold" size="36.0" />
             </font>
         </Label>
-        <Label fx:id="btnStart" layoutX="87.0" layoutY="72.0" onMouseClicked="#btnStartClick" prefHeight="38.0" prefWidth="79.0" text="Start" textFill="#15d71f">
+        <Label fx:id="btnStart" layoutX="87.0" layoutY="72.0" onMouseClicked="#btnStartClick" prefHeight="38.0" prefWidth="110.0" text="Start" textFill="#15d71f">
             <font>
                 <Font name="Berlin Sans FB Demi Bold" size="32.0" />
             </font>
@@ -23,13 +23,21 @@
                 <Font name="Berlin Sans FB Demi Bold" size="32.0" />
             </font>
         </Label>
-        <Pane fx:id="pMainContent" layoutX="253.0" prefHeight="400.0" prefWidth="788.0" style="-fx-background-color: purple;" />
-        <Label fx:id="btnDocumentation" layoutX="14.0" layoutY="269.0" onMouseClicked="#btnDocumentationClick" prefHeight="38.0" prefWidth="226.0" text="Documentation" textFill="LIGHTGRAY">
+        <Label fx:id="lblPaused" layoutX="370.0" layoutY="127.0" prefHeight="109.0" prefWidth="367.0" style="-fx-background-color: yellow;" text="The game is paused" textAlignment="CENTER">
+            <font>
+                <Font name="Berlin Sans FB Demi Bold" size="41.0" />
+            </font>
+        </Label>
+        <Pane fx:id="pMainContent" layoutX="253.0" prefHeight="400.0" prefWidth="788.0" style="-fx-background-color: purple;">
+         <children>
+
+         </children></Pane>
+        <Label fx:id="btnDocumentation" layoutX="14.0" layoutY="269.0" onMouseClicked="#btnDocumentationClick" prefHeight="38.0" prefWidth="226.0" text="Documentation" textFill="WHITE">
             <font>
                 <Font name="Berlin Sans FB Demi Bold" size="32.0" />
             </font>
         </Label>
-        <Label fx:id="btnLeaderboard" layoutX="27.0" layoutY="223.0" onMouseClicked="#btnLeaderboardClick" prefHeight="38.0" prefWidth="201.0" text="Leaderboard" textFill="LIGHTGRAY">
+        <Label fx:id="btnLeaderboard" layoutX="27.0" layoutY="223.0" onMouseClicked="#btnLeaderboardClick" prefHeight="38.0" prefWidth="201.0" text="Leaderboard" textFill="WHITE">
             <font>
                 <Font name="Berlin Sans FB Demi Bold" size="32.0" />
             </font>

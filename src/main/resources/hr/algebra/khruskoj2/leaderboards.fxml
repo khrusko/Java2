@@ -8,7 +8,7 @@
 <?import javafx.scene.text.Font?>
 
 
-<Pane maxHeight="-Infinity" maxWidth="-Infinity" fx:controller="hr.algebra.khruskoj2.controller.LeaderboardsController" minHeight="-Infinity" minWidth="-Infinity" prefHeight="400.0" prefWidth="600.0" style="-fx-background-color: purple;" xmlns="http://javafx.com/javafx/17" xmlns:fx="http://javafx.com/fxml/1">
+<Pane maxHeight="-Infinity" fx:controller="hr.algebra.khruskoj2.controller.LeaderboardsController" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="400.0" prefWidth="600.0" style="-fx-background-color: purple;" xmlns="http://javafx.com/javafx/17" xmlns:fx="http://javafx.com/fxml/1">
     <Label layoutX="189.0" layoutY="14.0" text="Leaderboards">
         <font>
             <Font name="Berlin Sans FB Demi Bold" size="36.0" />
@@ -17,7 +17,7 @@
     <ScrollPane layoutX="88.0" layoutY="72.0" prefHeight="307.0" prefWidth="430.0">
         <content>
             <TableView fx:id="tvLeaderboard" prefHeight="288.0" prefWidth="430.0">
-                <columns>
+            <columns>
                     <TableColumn fx:id="rankColumn" prefWidth="65.0" text="Rank" />
                     <TableColumn fx:id="playerColumn" prefWidth="188.0" text="Player" />
                     <TableColumn fx:id="scoreColumn" prefWidth="172.0" text="Score" />
@@ -26,4 +26,3 @@
         </content>
     </ScrollPane>
 </Pane>
-
