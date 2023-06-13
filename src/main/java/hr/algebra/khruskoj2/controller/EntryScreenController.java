@@ -1,13 +1,23 @@
 package hr.algebra.khruskoj2.controller;
 
+import hr.algebra.khruskoj2.model.EntryScreenState;
+import hr.algebra.khruskoj2.model.GameState;
+import hr.algebra.khruskoj2.model.Question;
+import hr.algebra.khruskoj2.model.UserAnswer;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
+import javafx.scene.Node;
+import javafx.scene.Parent;
+import javafx.scene.Scene;
 import javafx.scene.control.Label;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.Pane;
+import javafx.stage.Stage;
 
-import java.io.IOException;
+import java.io.*;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.Executors;
 
 public class EntryScreenController {
@@ -25,6 +35,15 @@ public class EntryScreenController {
     private Label btnContinue;
 
     @FXML
+    private Label btnSave;
+
+    @FXML
+    private Label btnLoad;
+
+    @FXML
+    private Label btnReplay;
+
+    @FXML
     private Label btnDocumentation;
 
     @FXML
@@ -36,6 +55,19 @@ public class EntryScreenController {
     @FXML
     private Label lblPaused;
 
+    private Parent root;
+
+
+    private GameScreenController gameScreenController;
+
+    public void setGameScreenController(GameScreenController gameScreenController, Parent gameScreenRoot) {
+        this.gameScreenController = gameScreenController;
+        this.root = gameScreenRoot;
+    }
+    public void setGameScreenController(GameScreenController gameScreenController) {
+        this.gameScreenController = gameScreenController;
+
+    }
 
     @FXML
     void btnStartClick(MouseEvent event) {
@@ -43,6 +75,8 @@ public class EntryScreenController {
         btnStart.setLayoutX(73.0);
         btnPause.setDisable(false);
         btnContinue.setDisable(true);
+        EntryScreenController entryScreenController = new EntryScreenController();
+        entryScreenController.setGameScreenController(gameScreenController);
 
         try {
             // Load the playerSelect.fxml file
@@ -65,7 +99,6 @@ public class EntryScreenController {
 
     @FXML
     void btnPauseClick(MouseEvent event) {
-        // TODO: Add Pause functionality
         btnContinue.setDisable(false);
         btnPause.setDisable(true);
         lblPaused.setVisible(true);
@@ -73,24 +106,60 @@ public class EntryScreenController {
         pMainContent.setDisable(true);
     }
 
-
-
     @FXML
     void btnContinueClick(MouseEvent event) {
-        // TODO: Add Continue functionality
         btnContinue.setDisable(true);
         btnPause.setDisable(false);
         lblPaused.setVisible(false);
         pMainContent.setDisable(false);
     }
 
+    @FXML
+    void btnSaveClick(MouseEvent event) {
+        GameScreenController gameScreenController = GameScreenController.getInstance();
+        if (gameScreenController != null) {
+            try (FileOutputStream fileOutputStream = new FileOutputStream("gameSaveState.ser");
+                 ObjectOutputStream objectOutputStream = new ObjectOutputStream(fileOutputStream)) {
+
+                List<UserAnswer> userAnswers = gameScreenController.getUserAnswers();
+                int currentQuestionIndex = gameScreenController.getCurrentQuestionIndex();
+                GameState gameState = new GameState(currentQuestionIndex, userAnswers);
+                objectOutputStream.writeObject(gameState);
+                System.out.println("Game state saved.");
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+    }
 
 
     @FXML
-    void btnExitClick(MouseEvent event) {
-        // Close the entire application
-        System.exit(0);
+    void btnLoadClick(MouseEvent event) {
+        if (gameScreenController != null) {
+            pMainContent.getChildren().clear();
+            gameScreenController.setPMainContent(pMainContent);
+            gameScreenController.loadGameState(pMainContent, root);
+        }
     }
+
+    @FXML
+    void btnReplayClick(MouseEvent event) {
+        GameScreenController gameScreenController = GameScreenController.getInstance();
+        try {
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/hr/algebra/khruskoj2/GameReplay.fxml"));
+            Parent rootReplay = loader.load();
+
+            GameReplayController gameReplayController = loader.getController();
+            List<UserAnswer> userAnswers = gameScreenController.getUserAnswers();
+            gameReplayController.replay(userAnswers);
+
+            pMainContent.getChildren().clear();
+            pMainContent.getChildren().add(rootReplay);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
 
     @FXML
     void btnDocumentationClick(MouseEvent event) {
@@ -120,6 +189,12 @@ public class EntryScreenController {
         } catch (IOException e) {
             e.printStackTrace();
         }
+    }
+
+    @FXML
+    void btnExitClick(MouseEvent event) {
+        // Close the entire application
+        System.exit(0);
     }
 
     @FXML

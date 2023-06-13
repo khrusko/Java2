@@ -2,7 +2,9 @@ package hr.algebra.khruskoj2.controller;
 
 import hr.algebra.khruskoj2.controller.ResultScreenController;
 import hr.algebra.khruskoj2.data.QuestionRepository;
+import hr.algebra.khruskoj2.model.GameState;
 import hr.algebra.khruskoj2.model.Question;
+import hr.algebra.khruskoj2.model.UserAnswer;
 import javafx.animation.PauseTransition;
 import javafx.application.Platform;
 import javafx.concurrent.Task;
@@ -19,7 +21,7 @@ import javafx.scene.layout.Pane;
 import javafx.stage.Stage;
 import javafx.util.Duration;
 
-import java.io.IOException;
+import java.io.*;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -60,9 +62,16 @@ public class GameScreenController {
     private int correctAnswers = 0;
     private int wrongAnswers = 0;
     private Pane pMainContent;
+    private List<UserAnswer> userAnswers;
 
     private static GameScreenController instance;
     private ExecutorService executorService;
+
+    private boolean cameFromLoadClick = false;
+
+    public void setCameFromLoadClick(boolean val) {
+        this.cameFromLoadClick = val;
+    }
 
     public static GameScreenController getInstance() {
         return instance;
@@ -75,6 +84,70 @@ public class GameScreenController {
     public void setPlayerNames(String player1Name, String player2Name) {
         this.player1Name = player1Name;
         this.player2Name = player2Name;
+    }
+
+    public void setQuestions(List<Question> questions) {
+        this.questions = questions;
+    }
+
+    public void setCurrentQuestionIndex(int currentQuestionIndex) {
+        this.currentQuestionIndex = currentQuestionIndex;
+    }
+
+    public void setPlayer1Name(String player1Name) {
+        this.player1Name = player1Name;
+    }
+
+    public void setPlayer2Name(String player2Name) {
+        this.player2Name = player2Name;
+    }
+
+    public void setAnswerSelected(boolean answerSelected) {
+        this.answerSelected = answerSelected;
+    }
+
+    public void setCorrectAnswers(int correctAnswers) {
+        this.correctAnswers = correctAnswers;
+    }
+
+    public void setWrongAnswers(int wrongAnswers) {
+        this.wrongAnswers = wrongAnswers;
+    }
+
+    public List<Question> getQuestions() {
+        return questions;
+    }
+
+    public int getCurrentQuestionIndex() {
+        return currentQuestionIndex;
+    }
+
+    public String getPlayer1Name() {
+        return player1Name;
+    }
+
+    public String getPlayer2Name() {
+        return player2Name;
+    }
+
+    public boolean isAnswerSelected() {
+        return answerSelected;
+    }
+
+    public int getCorrectAnswers() {
+        return correctAnswers;
+    }
+
+    public int getWrongAnswers() {
+        return wrongAnswers;
+    }
+
+    public void setUserAnswers(List<UserAnswer> userAnswers) {
+        this.userAnswers = userAnswers;
+    }
+
+    public List<UserAnswer> getUserAnswers() {
+        return userAnswers;
     }
 
     @FXML
@@ -110,6 +183,7 @@ public class GameScreenController {
     }
 
     private void checkAnswer(String selectedAnswer) {
+
         Question currentQuestion = questions.get(currentQuestionIndex);
         String correctAnswer = currentQuestion.getCorrectAnswer();
 
@@ -130,6 +204,9 @@ public class GameScreenController {
         } else {
             btnAnswer4.setStyle(correctStyle);
         }
+
+        Question userQuestion = questions.get(currentQuestionIndex);
+        userAnswers.add(new UserAnswer(userQuestion, selectedAnswer, player1Name));
 
         if (selectedAnswer.equals(correctAnswer)) {
             // Answer correct
@@ -184,13 +261,15 @@ public class GameScreenController {
         }
     }
 
+
     private void showNextQuestion() {
         currentQuestionIndex++;
         showCurrentQuestion();
         answerSelected = false;
     }
 
-    private void showCurrentQuestion() {
+    public void showCurrentQuestion() {
+
         if (currentQuestionIndex < questions.size()) {
             Question currentQuestion = questions.get(currentQuestionIndex);
             Platform.runLater(() -> {
@@ -215,20 +294,21 @@ public class GameScreenController {
     public void showResultScreen() {
         try {
             FXMLLoader loader = new FXMLLoader(getClass().getResource("/hr/algebra/khruskoj2/resultScreen.fxml"));
-            Parent root = loader.load();
+            Parent root1 = loader.load();
 
             ResultScreenController resultScreenController = loader.getController();
 
-            resultScreenController.setResultData(correctAnswers, wrongAnswers, player1Name, player2Name);
+            resultScreenController.setResultData(correctAnswers, wrongAnswers, player1Name, player2Name, userAnswers);
 
             Platform.runLater(() -> {
                 pMainContent.getChildren().clear();
-                pMainContent.getChildren().add(root);
+                pMainContent.getChildren().add(root1);
             });
         } catch (IOException e) {
             e.printStackTrace();
         }
     }
+
 
     @FXML
     void messageTextFieldKeyPressed(KeyEvent event) {
@@ -244,42 +324,96 @@ public class GameScreenController {
         }
     }
 
-    public synchronized void loadQuestionsAsync() {
-        Task<List<Question>> task = new Task<List<Question>>() {
-            @Override
-            protected List<Question> call() throws Exception {
-                QuestionRepository questionRepository = new QuestionRepository();
-                return questionRepository.getAllQuestions();
-            }
-        };
+    public void loadGameState(Pane pMainContent, Parent root) {
+        chatListView.getItems().clear();
+        pMainContent.getChildren().clear();
+        try (FileInputStream fileInputStream = new FileInputStream("gameSaveState.ser");
+             ObjectInputStream objectInputStream = new ObjectInputStream(fileInputStream)) {
 
-        task.setOnSucceeded(event -> {
-            questions = task.getValue();
-            Collections.shuffle(questions); // Shuffle the questions randomly
-            currentQuestionIndex = 0;
+            // Read the serialized GameState object
+            GameState gameState = (GameState) objectInputStream.readObject();
+
+            // Update the current question index and user answers
+            currentQuestionIndex = gameState.getCurrentQuestionIndex();
+            userAnswers = gameState.getUserAnswers();
+            List<UserAnswer> temp = gameState.getUserAnswers();
+            UserAnswer firstUserAnswerTemp = temp.get(0);
+            player1Name = firstUserAnswerTemp.getPlayerName();
+
+            wrongAnswers = gameState.getNumberOfWrongAnswersUser(player1Name);
+            correctAnswers = gameState.getNumberOfCorrectAnswersUser(player1Name);
+
+            // Reset the answerSelected flag because if not you wont be able to click anything
+            answerSelected = false;
+
+            // Show the current question
             showCurrentQuestion();
-        });
 
-        task.setOnFailed(event -> {
-            Throwable exception = task.getException();
-            // Handle the exception
-            exception.printStackTrace();
-        });
+            // Set the updated gameScreen.fxml into pMainContent
+            pMainContent.getChildren().add(root);
 
-        executorService.submit(task);
+            System.out.println("Game state loaded.");
+
+        } catch (FileNotFoundException e) {
+            System.out.println("File not found: gameSaveState.ser");
+        } catch (IOException | ClassNotFoundException e) {
+            e.printStackTrace();
+        }
     }
+
+
+
+
+
+
+    private void loadQuestions() {
+
+        QuestionRepository questionRepository = new QuestionRepository();
+        try {
+            questions = questionRepository.getAllQuestions();
+        } catch (Exception e) {
+            e.printStackTrace();
+            // Handle the exception
+        }
+    }
+
+//    public synchronized void loadQuestionsAsync() {
+//        Task<List<Question>> task = new Task<List<Question>>() {
+//            @Override
+//            protected List<Question> call() throws Exception {
+//                QuestionRepository questionRepository = new QuestionRepository();
+//                return questionRepository.getAllQuestions();
+//            }
+//        };
+//
+//        task.setOnSucceeded(event -> {
+//            questions = task.getValue();
+//            //Collections.shuffle(questions); // Shuffle the questions randomly
+//            currentQuestionIndex = 0;
+//            showCurrentQuestion();
+//        });
+//
+//        task.setOnFailed(event -> {
+//            Throwable exception = task.getException();
+//            // Handle the exception
+//            exception.printStackTrace();
+//        });
+//
+//        executorService.submit(task);
+//    }
 
     @FXML
     public void initialize() {
-
         instance = this;
+        chatListView.getItems().clear();
         executorService = Executors.newSingleThreadExecutor();
-        loadQuestionsAsync();
-        shutdownExecutorService();
+            loadQuestions();
+            showCurrentQuestion();
+        if (userAnswers == null) {
+            userAnswers = new ArrayList<>();
+        }
     }
-
-
-    public void shutdownExecutorService() {
+    public void shutdownExecutorService () {
         executorService.shutdownNow();
     }
 }
