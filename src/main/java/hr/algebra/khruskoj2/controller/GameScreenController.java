@@ -1,10 +1,10 @@
 package hr.algebra.khruskoj2.controller;
 
-import hr.algebra.khruskoj2.controller.ResultScreenController;
 import hr.algebra.khruskoj2.data.QuestionRepository;
 import hr.algebra.khruskoj2.model.GameState;
 import hr.algebra.khruskoj2.model.Question;
 import hr.algebra.khruskoj2.model.UserAnswer;
+import hr.algebra.khruskoj2.rmiserver.ChatService;
 import javafx.animation.PauseTransition;
 import javafx.application.Platform;
 import javafx.concurrent.Task;
@@ -12,21 +12,35 @@ import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.control.Label;
-import javafx.scene.control.ListView;
+import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.Pane;
-import javafx.stage.Stage;
 import javafx.util.Duration;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
 
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.transform.Result;
+import javax.xml.transform.Source;
+import javax.xml.transform.Transformer;
+import javax.xml.transform.TransformerFactory;
+import javax.xml.transform.dom.DOMSource;
+import javax.xml.transform.stream.StreamResult;
 import java.io.*;
+import java.rmi.NotBoundException;
+import java.rmi.RemoteException;
+import java.rmi.registry.LocateRegistry;
+import java.rmi.registry.Registry;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
+import java.util.concurrent.*;
 
 public class GameScreenController {
 
@@ -49,7 +63,7 @@ public class GameScreenController {
     private Label lblQuestionNumber;
 
     @FXML
-    private ListView<String> chatListView;
+    private TextArea chatListView;
 
     @FXML
     private TextField messageTextField;
@@ -63,15 +77,12 @@ public class GameScreenController {
     private int wrongAnswers = 0;
     private Pane pMainContent;
     private List<UserAnswer> userAnswers;
-
+    public static final String replayFilePath = "replayFilePath.xml";
     private static GameScreenController instance;
     private ExecutorService executorService;
-
-    private boolean cameFromLoadClick = false;
-
-    public void setCameFromLoadClick(boolean val) {
-        this.cameFromLoadClick = val;
-    }
+    ChatService stub = null;
+    private ScheduledExecutorService chatRefreshExecutor;
+    private ScheduledFuture<?> chatRefreshTask;
 
     public static GameScreenController getInstance() {
         return instance;
@@ -86,64 +97,8 @@ public class GameScreenController {
         this.player2Name = player2Name;
     }
 
-    public void setQuestions(List<Question> questions) {
-        this.questions = questions;
-    }
-
-    public void setCurrentQuestionIndex(int currentQuestionIndex) {
-        this.currentQuestionIndex = currentQuestionIndex;
-    }
-
-    public void setPlayer1Name(String player1Name) {
-        this.player1Name = player1Name;
-    }
-
-    public void setPlayer2Name(String player2Name) {
-        this.player2Name = player2Name;
-    }
-
-    public void setAnswerSelected(boolean answerSelected) {
-        this.answerSelected = answerSelected;
-    }
-
-    public void setCorrectAnswers(int correctAnswers) {
-        this.correctAnswers = correctAnswers;
-    }
-
-    public void setWrongAnswers(int wrongAnswers) {
-        this.wrongAnswers = wrongAnswers;
-    }
-
-    public List<Question> getQuestions() {
-        return questions;
-    }
-
     public int getCurrentQuestionIndex() {
         return currentQuestionIndex;
-    }
-
-    public String getPlayer1Name() {
-        return player1Name;
-    }
-
-    public String getPlayer2Name() {
-        return player2Name;
-    }
-
-    public boolean isAnswerSelected() {
-        return answerSelected;
-    }
-
-    public int getCorrectAnswers() {
-        return correctAnswers;
-    }
-
-    public int getWrongAnswers() {
-        return wrongAnswers;
-    }
-
-    public void setUserAnswers(List<UserAnswer> userAnswers) {
-        this.userAnswers = userAnswers;
     }
 
     public List<UserAnswer> getUserAnswers() {
@@ -292,6 +247,7 @@ public class GameScreenController {
     }
 
     public void showResultScreen() {
+        saveUserAnswersForReplay(userAnswers);
         try {
             FXMLLoader loader = new FXMLLoader(getClass().getResource("/hr/algebra/khruskoj2/resultScreen.fxml"));
             Parent root1 = loader.load();
@@ -309,31 +265,157 @@ public class GameScreenController {
         }
     }
 
+    private void saveUserAnswersForReplay(List<UserAnswer> userAnswers) {
+        GameReplayController gameReplayController = GameReplayController.getInstance();
+        if (gameReplayController == null) {
+            try {
+                FXMLLoader loader = new FXMLLoader(getClass().getResource("/hr/algebra/khruskoj2/gameReplay.fxml"));
+                Parent root = loader.load();
+                gameReplayController = loader.getController();
+                gameReplayController.setUserAnswers(userAnswers);
+                gameReplayController.setRoot(root);
+                saveToXML(userAnswers, replayFilePath);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        } else {
+            gameReplayController.setUserAnswers(userAnswers);
+            saveToXML(userAnswers, replayFilePath);
+        }
+    }
+
+    public void saveToXML(List<UserAnswer> userAnswers, String filePath) {
+        try {
+            DocumentBuilderFactory documentBuilderFactory = DocumentBuilderFactory.newInstance();
+            DocumentBuilder documentBuilder = documentBuilderFactory.newDocumentBuilder();
+
+            Document xmlDocument = documentBuilder.newDocument();
+
+            Element rootElement = xmlDocument.createElement("UserAnswers");
+            xmlDocument.appendChild(rootElement);
+
+            for (UserAnswer userAnswer : userAnswers) {
+                Element userAnswerElement = xmlDocument.createElement("UserAnswer");
+
+                Element questionTextElement = xmlDocument.createElement("QuestionText");
+                Node questionTextNode = xmlDocument.createTextNode(userAnswer.getQuestionText());
+                questionTextElement.appendChild(questionTextNode);
+                userAnswerElement.appendChild(questionTextElement);
+
+                Element correctAnswerElement = xmlDocument.createElement("CorrectAnswer");
+                Node correctAnswerTextNode = xmlDocument.createTextNode(userAnswer.getCorrectAnswer());
+                correctAnswerElement.appendChild(correctAnswerTextNode);
+                userAnswerElement.appendChild(correctAnswerElement);
+
+                Element selectedAnswerElement = xmlDocument.createElement("SelectedAnswer");
+                Node selectedAnswerTextNode = xmlDocument.createTextNode(userAnswer.getSelectedAnswer());
+                selectedAnswerElement.appendChild(selectedAnswerTextNode);
+                userAnswerElement.appendChild(selectedAnswerElement);
+
+                Element wrongAnswersElement = xmlDocument.createElement("WrongAnswers");
+                for (String wrongAnswer : userAnswer.getWrongAnswers()) {
+                    Element wrongAnswerElement = xmlDocument.createElement("WrongAnswer");
+                    Node wrongAnswerTextNode = xmlDocument.createTextNode(wrongAnswer);
+                    wrongAnswerElement.appendChild(wrongAnswerTextNode);
+                    wrongAnswersElement.appendChild(wrongAnswerElement);
+                }
+                userAnswerElement.appendChild(wrongAnswersElement);
+
+                rootElement.appendChild(userAnswerElement);
+            }
+
+            Transformer transformer = TransformerFactory.newInstance().newTransformer();
+            Source xmlSource = new DOMSource(xmlDocument);
+            Result xmlResult = new StreamResult(new File(filePath));
+
+            transformer.transform(xmlSource, xmlResult);
+            System.out.println("File '" + filePath + "' was created!");
+
+        } catch (Exception ex) {
+            ex.printStackTrace();
+        }
+    }
+
+    public List<UserAnswer> loadFromXML(String filePath) {
+        List<UserAnswer> userAnswers = new ArrayList<>();
+
+        try {
+            File file = new File(filePath);
+            DocumentBuilderFactory dbFactory = DocumentBuilderFactory.newInstance();
+            DocumentBuilder dBuilder = dbFactory.newDocumentBuilder();
+            Document doc = dBuilder.parse(file);
+            doc.getDocumentElement().normalize();
+
+            NodeList nList = doc.getElementsByTagName("UserAnswer");
+
+            for (int temp = 0; temp < nList.getLength(); temp++) {
+                Node nNode = nList.item(temp);
+
+                if (nNode.getNodeType() == Node.ELEMENT_NODE) {
+                    Element eElement = (Element) nNode;
+                    String questionText = eElement.getElementsByTagName("QuestionText").item(0).getTextContent();
+                    String correctAnswer = eElement.getElementsByTagName("CorrectAnswer").item(0).getTextContent();
+                    String selectedAnswer = eElement.getElementsByTagName("SelectedAnswer").item(0).getTextContent();
+
+                    List<String> wrongAnswers = new ArrayList<>();
+                    NodeList wrongAnswerNodes = eElement.getElementsByTagName("WrongAnswer");
+                    for (int i = 0; i < wrongAnswerNodes.getLength(); i++) {
+                        wrongAnswers.add(wrongAnswerNodes.item(i).getTextContent());
+                    }
+
+                    UserAnswer userAnswer = new UserAnswer(new Question(temp, questionText, wrongAnswers, correctAnswer), selectedAnswer, player1Name);
+                    userAnswers.add(userAnswer);
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        return userAnswers;
+    }
+
 
     @FXML
-    void messageTextFieldKeyPressed(KeyEvent event) {
+    void messageTextFieldKeyPressed(KeyEvent event) throws RemoteException {
         if (event.getCode() == KeyCode.ENTER) {
             String message = messageTextField.getText();
-
-            Platform.runLater(() -> {
-                // TODO: Differentiate between players and display their name and message
-                chatListView.getItems().add(player1Name + ": " + message);
-            });
+            stub.sendMessage(message, player1Name);
 
             messageTextField.clear();
+            messageTextField.requestFocus();
+        }
+    }
+
+    private void startChatRefresh() {
+        chatRefreshExecutor = Executors.newSingleThreadScheduledExecutor();
+        chatRefreshTask = chatRefreshExecutor.scheduleAtFixedRate(() -> {
+            try {
+                List<String> chatHistory = stub.getChatHistory();
+                Platform.runLater(() -> {
+                    StringBuilder sb = new StringBuilder();
+                    chatHistory.forEach(a -> sb.append(a).append("\n"));
+                    chatListView.setText(sb.toString());
+                });
+            } catch (RemoteException e) {
+                e.printStackTrace();
+            }
+        }, 0, 1, TimeUnit.SECONDS);
+    }
+
+    private void stopChatRefresh() {
+        if (chatRefreshTask != null) {
+            chatRefreshTask.cancel(true);
+        }
+        if (chatRefreshExecutor != null) {
+            chatRefreshExecutor.shutdown();
         }
     }
 
     public void loadGameState(Pane pMainContent, Parent root) {
-        chatListView.getItems().clear();
         pMainContent.getChildren().clear();
-        try (FileInputStream fileInputStream = new FileInputStream("gameSaveState.ser");
-             ObjectInputStream objectInputStream = new ObjectInputStream(fileInputStream)) {
-
-            // Read the serialized GameState object
+        try (FileInputStream fileInputStream = new FileInputStream("gameSaveState.ser"); ObjectInputStream objectInputStream = new ObjectInputStream(fileInputStream)) {
             GameState gameState = (GameState) objectInputStream.readObject();
 
-            // Update the current question index and user answers
             currentQuestionIndex = gameState.getCurrentQuestionIndex();
             userAnswers = gameState.getUserAnswers();
             List<UserAnswer> temp = gameState.getUserAnswers();
@@ -343,16 +425,10 @@ public class GameScreenController {
             wrongAnswers = gameState.getNumberOfWrongAnswersUser(player1Name);
             correctAnswers = gameState.getNumberOfCorrectAnswersUser(player1Name);
 
-            // Reset the answerSelected flag because if not you wont be able to click anything
+            //Cant click anything if true!
             answerSelected = false;
-
-            // Show the current question
             showCurrentQuestion();
-
-            // Set the updated gameScreen.fxml into pMainContent
             pMainContent.getChildren().add(root);
-
-            System.out.println("Game state loaded.");
 
         } catch (FileNotFoundException e) {
             System.out.println("File not found: gameSaveState.ser");
@@ -361,59 +437,37 @@ public class GameScreenController {
         }
     }
 
-
-
-
-
-
-    private void loadQuestions() {
-
-        QuestionRepository questionRepository = new QuestionRepository();
-        try {
-            questions = questionRepository.getAllQuestions();
-        } catch (Exception e) {
-            e.printStackTrace();
-            // Handle the exception
-        }
+    public synchronized void loadQuestionsAsync() {
+        Task<List<Question>> task = new Task<List<Question>>() {
+            @Override
+            protected List<Question> call() throws Exception {
+                QuestionRepository questionRepository = new QuestionRepository();
+                return questionRepository.getAllQuestions();
+            }
+        };
+        task.setOnSucceeded(event -> {
+            questions = task.getValue();
+            showCurrentQuestion();
+        });
+        executorService.submit(task);
     }
 
-//    public synchronized void loadQuestionsAsync() {
-//        Task<List<Question>> task = new Task<List<Question>>() {
-//            @Override
-//            protected List<Question> call() throws Exception {
-//                QuestionRepository questionRepository = new QuestionRepository();
-//                return questionRepository.getAllQuestions();
-//            }
-//        };
-//
-//        task.setOnSucceeded(event -> {
-//            questions = task.getValue();
-//            //Collections.shuffle(questions); // Shuffle the questions randomly
-//            currentQuestionIndex = 0;
-//            showCurrentQuestion();
-//        });
-//
-//        task.setOnFailed(event -> {
-//            Throwable exception = task.getException();
-//            // Handle the exception
-//            exception.printStackTrace();
-//        });
-//
-//        executorService.submit(task);
-//    }
-
     @FXML
-    public void initialize() {
+    public void initialize() throws RemoteException, NotBoundException {
         instance = this;
-        chatListView.getItems().clear();
         executorService = Executors.newSingleThreadExecutor();
-            loadQuestions();
-            showCurrentQuestion();
+        loadQuestionsAsync();
         if (userAnswers == null) {
             userAnswers = new ArrayList<>();
         }
+        Registry registry = LocateRegistry.getRegistry("localhost", 1919);
+        stub = (ChatService) registry.lookup("hr.algebra.khruskoj2.rmiserver");
+
+        startChatRefresh();
     }
-    public void shutdownExecutorService () {
+
+    public void shutdownExecutorService() {
         executorService.shutdownNow();
+        stopChatRefresh();
     }
 }

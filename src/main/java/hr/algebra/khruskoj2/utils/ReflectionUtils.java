@@ -13,11 +13,13 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 public final class ReflectionUtils {
-    private ReflectionUtils(){
+    private ReflectionUtils() {
 
     }
+
     private static final String CLASS_EXTENSION = ".class";
-    public static void generateDocumentation(){
+
+    public static void generateDocumentation() {
         File documentationFile = new File("Documentation.html");
         try {
 
@@ -32,12 +34,10 @@ public final class ReflectionUtils {
             writer.write("<h1>Project documentation</h1>");
             writer.write("<p>Class list:</p>");
 
-            List<Path> paths = Files.walk(Paths.get("."))
-                    .filter(path -> path.getFileName().toString().endsWith(CLASS_EXTENSION))
-                    .collect(Collectors.toList());
+            List<Path> paths = Files.walk(Paths.get(".")).filter(path ->
+                    path.getFileName().toString().endsWith(CLASS_EXTENSION)).collect(Collectors.toList());
 
             for (Path path : paths) {
-                //System.out.println("Path: " + path);
                 String[] tokens = path.toString().split(Pattern.quote(System.getProperty("file.separator")));
 
                 Boolean startBuildingPath = false;
@@ -104,8 +104,8 @@ public final class ReflectionUtils {
 
                         String constructorParams = generateDocumentation(c);
 
-                        writer.write("<h4>Constructor:" + Modifier.toString(c.getModifiers()) + " " + c.getName()
-                                + "(" + constructorParams + ")" + "</h4>");
+                        writer.write("<h4>Constructor:" + Modifier.toString(c.getModifiers()) +
+                                " " + c.getName() + "(" + constructorParams + ")" + "</h4>");
                     }
 
                     Method[] methods = clazz.getMethods();
@@ -131,11 +131,9 @@ public final class ReflectionUtils {
                             }
                         }
 
-                        writer.write("<h4>Method:" + Modifier.toString(m.getModifiers())
-                                + " " + m.getReturnType().getSimpleName()
-                                + " " + m.getName() + "(" + methodsParams + ")"
-                                + " " + exceptionsBuilder.toString()
-                                + "</h4>");
+                        writer.write("<h4>Method:" + Modifier.toString(m.getModifiers()) + " " +
+                                m.getReturnType().getSimpleName() + " " + m.getName() + "(" +
+                                methodsParams + ")" + " " + exceptionsBuilder.toString() + "</h4>");
                     }
 
                 } catch (ClassNotFoundException e) {

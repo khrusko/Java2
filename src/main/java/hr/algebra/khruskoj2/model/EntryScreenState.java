@@ -8,8 +8,7 @@ public class EntryScreenState implements Serializable {
     private boolean btnPauseDisabled;
     private boolean btnContinueDisabled;
 
-    public EntryScreenState(String btnStartText, double btnStartLayoutX, boolean btnPauseDisabled,
-                            boolean btnContinueDisabled) {
+    public EntryScreenState(String btnStartText, double btnStartLayoutX, boolean btnPauseDisabled, boolean btnContinueDisabled) {
         this.btnStartText = btnStartText;
         this.btnStartLayoutX = btnStartLayoutX;
         this.btnPauseDisabled = btnPauseDisabled;

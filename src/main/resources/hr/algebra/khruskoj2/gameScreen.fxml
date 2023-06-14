@@ -7,6 +7,7 @@
 <?import javafx.scene.layout.Pane?>
 <?import javafx.scene.text.Font?>
 
+<?import javafx.scene.control.TextArea?>
 <AnchorPane fx:id="apGameScreen" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="400.0" prefWidth="600.0" style="-fx-background-color: purple;" xmlns="http://javafx.com/javafx/17" xmlns:fx="http://javafx.com/fxml/1" fx:controller="hr.algebra.khruskoj2.controller.GameScreenController">
     <children>
         <Label fx:id="btnAnswer1" layoutX="44.0" layoutY="248.0" onMouseClicked="#btnAnswer1Click" prefHeight="45.0" prefWidth="237.0" style="-fx-background-color: linear-gradient(#686868, #454545); -fx-background-radius: 10px; -fx-border-radius: 10px; -fx-alignment: center;" text="Answer 1" textFill="WHITE" wrapText="true">
@@ -43,7 +44,7 @@
         </Label>
 
         <Pane layoutX="600.0" layoutY="0.0" prefHeight="400.0" prefWidth="180.0">
-            <ListView fx:id="chatListView" layoutY="27.0" prefHeight="302.0" prefWidth="180.0" style="-fx-background-color: white; -fx-border-color: black; -fx-border-width: 1px;" />
+            <TextArea fx:id="chatListView" layoutY="27.0" prefHeight="302.0" prefWidth="180.0" style="-fx-background-color: white; -fx-border-color: black; -fx-border-width: 1px;" />
             <TextField fx:id="messageTextField" layoutY="328.0" prefHeight="30.0" prefWidth="180.0" promptText="Type your message"
                        onKeyPressed="#messageTextFieldKeyPressed"
                        style="-fx-border-color: black; -fx-border-width: 1px; -fx-padding: 5px;" /><Label layoutX="31.0" layoutY="-1.0" prefHeight="15.0" prefWidth="135.0" text="Chat">

@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.layout.AnchorPane?>
+<?import javafx.scene.text.Font?>
+
+<AnchorPane fx:id="apGameScreen" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="400.0" prefWidth="600.0" style="-fx-background-color: purple;" xmlns="http://javafx.com/javafx/17" xmlns:fx="http://javafx.com/fxml/1" fx:controller="hr.algebra.khruskoj2.controller.GameReplayController">
+    <children>
+        <Label fx:id="lblAnswer1" layoutX="44.0" layoutY="248.0" prefHeight="45.0" prefWidth="237.0" style="-fx-background-color: linear-gradient(#686868, #454545); -fx-background-radius: 10px; -fx-border-radius: 10px; -fx-alignment: center;" text="Answer 1" textFill="WHITE" wrapText="true">
+            <font>
+                <Font name="Berlin Sans FB Demi Bold" size="20.0" />
+            </font>
+        </Label>
+        <Label fx:id="lblAnswer2" layoutX="316.0" layoutY="248.0" prefHeight="45.0" prefWidth="237.0" style="-fx-background-color: linear-gradient(#686868, #454545); -fx-background-radius: 10px; -fx-border-radius: 10px; -fx-alignment: center;" text="Answer 2" textFill="WHITE" wrapText="true">
+            <font>
+                <Font name="Berlin Sans FB Demi Bold" size="20.0" />
+            </font>
+        </Label>
+        <Label fx:id="lblAnswer3" layoutX="44.0" layoutY="313.0" prefHeight="45.0" prefWidth="237.0" style="-fx-background-color: linear-gradient(#686868, #454545); -fx-background-radius: 10px; -fx-border-radius: 10px; -fx-alignment: center;" text="Answer 3" textFill="WHITE" wrapText="true">
+            <font>
+                <Font name="Berlin Sans FB Demi Bold" size="20.0" />
+            </font>
+        </Label>
+        <Label fx:id="lblAnswer4" layoutX="316.0" layoutY="313.0" prefHeight="45.0" prefWidth="237.0" style="-fx-background-color: linear-gradient(#686868, #454545); -fx-background-radius: 10px; -fx-border-radius: 10px; -fx-alignment: center;" text="Answer 4" textFill="WHITE" wrapText="true">
+            <font>
+                <Font name="Berlin Sans FB Demi Bold" size="20.0" />
+            </font>
+        </Label>
+
+        <Label fx:id="lblQuestion" layoutX="100.0" layoutY="54.0" prefHeight="130.0" prefWidth="400.0" style="-fx-background-color: lightgray; -fx-background-radius: 50%; -fx-border-width: 0; -fx-alignment: center;" text="Question" textAlignment="CENTER" wrapText="true">
+            <font>
+                <Font name="Berlin Sans FB Demi Bold" size="26.0" />
+            </font>
+        </Label>
+
+        <Label fx:id="lblQuestionNumber" layoutX="14.0" layoutY="14.0" prefHeight="32.0" prefWidth="150.0" style="-fx-font-family: 'Berlin Sans FB Demi Bold'; -fx-font-size: 17.0; -fx-text-fill: black; -fx-underline: true; -fx-text-transform: uppercase; -fx-alignment: center;" text="" textFill="WHITE" wrapText="true">
+            <font>
+                <Font name="Berlin Sans FB Demi Bold" size="17.0" />
+            </font>
+        </Label>
+      <Label fx:id="lblGameReplay" layoutX="221.0" prefHeight="45.0" prefWidth="158.0" text="Game replay" textAlignment="CENTER" wrapText="true">
+         <font>
+            <Font name="Berlin Sans FB Demi Bold" size="26.0" />
+         </font>
+      </Label>
+    </children>
+</AnchorPane>

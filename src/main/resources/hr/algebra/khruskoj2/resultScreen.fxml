@@ -1,36 +1,37 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
 <?import javafx.scene.control.Label?>
+<?import javafx.scene.control.ListView?>
 <?import javafx.scene.layout.AnchorPane?>
 <?import javafx.scene.text.Font?>
 
-
-<AnchorPane maxHeight="-Infinity" fx:controller="hr.algebra.khruskoj2.controller.ResultScreenController" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="400.0" prefWidth="600.0" style="-fx-background-color: purple;" xmlns="http://javafx.com/javafx/17" xmlns:fx="http://javafx.com/fxml/1">
+<AnchorPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="400.0" prefWidth="600.0" style="-fx-background-color: purple;" xmlns="http://javafx.com/javafx/17" xmlns:fx="http://javafx.com/fxml/1" fx:controller="hr.algebra.khruskoj2.controller.ResultScreenController">
     <children>
         <Label layoutX="187.0" layoutY="28.0" prefHeight="43.0" prefWidth="226.0" text="Game results">
             <font>
                 <Font name="Berlin Sans FB Demi Bold" size="36.0" />
             </font>
         </Label>
-        <Label layoutX="54.0" layoutY="99.0" prefHeight="43.0" prefWidth="182.0" text="Correct answers" textFill="#00ff04">
+        <Label layoutX="54.0" layoutY="78.0" prefHeight="43.0" prefWidth="182.0" text="Correct answers" textFill="#00ff04">
             <font>
                 <Font name="Berlin Sans FB Demi Bold" size="24.0" />
             </font>
         </Label>
-        <Label layoutX="353.0" layoutY="99.0" prefHeight="43.0" prefWidth="182.0" text="Wrong answers" textFill="RED">
+        <Label layoutX="353.0" layoutY="78.0" prefHeight="43.0" prefWidth="182.0" text="Wrong answers" textFill="RED">
             <font>
                 <Font name="Berlin Sans FB Demi Bold" size="24.0" />
             </font>
         </Label>
-        <Label fx:id="lblCorrectAnswers" layoutX="134.0" layoutY="149.0" text="a">
+        <Label fx:id="lblCorrectAnswers" layoutX="134.0" layoutY="128.0" text="a">
             <font>
                 <Font name="Berlin Sans FB Demi Bold" size="36.0" />
             </font>
         </Label>
-        <Label fx:id="lblWrongAnswers" layoutX="433.0" layoutY="149.0" text="a">
+        <Label fx:id="lblWrongAnswers" layoutX="433.0" layoutY="128.0" text="a">
             <font>
                 <Font name="Berlin Sans FB Demi Bold" size="36.0" />
             </font>
         </Label>
+      <ListView fx:id="lvDetailedResults" layoutX="15.0" layoutY="178.0" prefHeight="200.0" prefWidth="570.0" />
     </children>
 </AnchorPane>

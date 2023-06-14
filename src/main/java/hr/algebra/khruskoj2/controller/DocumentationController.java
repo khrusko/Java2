@@ -23,7 +23,6 @@ public class DocumentationController {
              BufferedReader reader = new BufferedReader(new InputStreamReader(is))) {
             String line;
             while ((line = reader.readLine()) != null) {
-                // Replace HTML line breaks with newline characters
                 line = line.replaceAll("<br />", "\n");
                 sb.append(line).append("\n");
             }

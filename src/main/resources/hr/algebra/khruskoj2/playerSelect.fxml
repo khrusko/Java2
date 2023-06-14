@@ -12,12 +12,7 @@
                 <Font name="Berlin Sans FB Demi Bold" size="32.0" />
             </font>
         </Label>
-        <Label layoutX="104.0" layoutY="129.0" text="Player 1:">
-            <font>
-                <Font name="Berlin Sans FB Demi Bold" size="24.0" />
-            </font>
-        </Label>
-        <Label layoutX="393.0" layoutY="129.0" text="Player 2:">
+        <Label layoutX="230.0" layoutY="129.0" text="Player name:">
             <font>
                 <Font name="Berlin Sans FB Demi Bold" size="24.0" />
             </font>
@@ -27,7 +22,6 @@
                 <Font name="Berlin Sans FB Demi Bold" size="24.0" />
             </font>
         </Label>
-        <TextField fx:id="tfPlayer1Name" layoutX="75.0" layoutY="175.0" promptText="Player 1 name" />
-        <TextField fx:id="tfPlayer2Name" layoutX="366.0" layoutY="175.0" promptText="Player 2 name" />
+        <TextField fx:id="tfPlayer1Name" layoutX="230.0" layoutY="175.0" promptText="Player name" />
     </children>
 </AnchorPane>

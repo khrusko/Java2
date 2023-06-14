@@ -1,9 +1,7 @@
 package hr.algebra.khruskoj2.model;
 
 import java.io.Serializable;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 public class UserAnswer implements Serializable {
     private int questionIndex;
@@ -15,7 +13,7 @@ public class UserAnswer implements Serializable {
 
     public UserAnswer(Question question, String selectedAnswer, String playerName) {
         this.questionIndex = question.getQuestionIndex();
-        this.questionText= question.getQuestion();
+        this.questionText = question.getQuestion();
         this.wrongAnswers = question.getWrongAnswers();
         this.correctAnswer = question.getCorrectAnswer();
         this.playerName = playerName;

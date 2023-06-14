@@ -28,6 +28,7 @@ public class App extends Application {
         // Set the title and scene for the primary stage
         primaryStage.setTitle("Entry Screen");
         primaryStage.setScene(new Scene(root));
+        primaryStage.setResizable(false);
         primaryStage.show();
     }
 

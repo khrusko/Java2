@@ -1,24 +1,25 @@
 package hr.algebra.khruskoj2.controller;
 
-import hr.algebra.khruskoj2.model.EntryScreenState;
 import hr.algebra.khruskoj2.model.GameState;
-import hr.algebra.khruskoj2.model.Question;
 import hr.algebra.khruskoj2.model.UserAnswer;
+import hr.algebra.khruskoj2.rmiserver.ChatService;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
-import javafx.scene.Node;
 import javafx.scene.Parent;
-import javafx.scene.Scene;
 import javafx.scene.control.Label;
 import javafx.scene.input.MouseEvent;
-import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.Pane;
-import javafx.stage.Stage;
 
-import java.io.*;
-import java.util.ArrayList;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.ObjectOutputStream;
+import java.rmi.NotBoundException;
+import java.rmi.RemoteException;
+import java.rmi.registry.LocateRegistry;
+import java.rmi.registry.Registry;
 import java.util.List;
-import java.util.concurrent.Executors;
+
+import static hr.algebra.khruskoj2.controller.GameScreenController.replayFilePath;
 
 public class EntryScreenController {
 
@@ -57,6 +58,8 @@ public class EntryScreenController {
 
     private Parent root;
 
+    ChatService stub = null;
+
 
     private GameScreenController gameScreenController;
 
@@ -64,13 +67,15 @@ public class EntryScreenController {
         this.gameScreenController = gameScreenController;
         this.root = gameScreenRoot;
     }
+
     public void setGameScreenController(GameScreenController gameScreenController) {
         this.gameScreenController = gameScreenController;
 
     }
 
     @FXML
-    void btnStartClick(MouseEvent event) {
+    void btnStartClick(MouseEvent event) throws RemoteException {
+        stub.clearChatHistory();
         btnStart.setText("Restart");
         btnStart.setLayoutX(73.0);
         btnPause.setDisable(false);
@@ -79,17 +84,12 @@ public class EntryScreenController {
         entryScreenController.setGameScreenController(gameScreenController);
 
         try {
-            // Load the playerSelect.fxml file
             FXMLLoader loader = new FXMLLoader(getClass().getResource("/hr/algebra/khruskoj2/playerSelect.fxml"));
             Pane playerSelectPane = loader.load();
 
-            // Get the controller of the playerSelect.fxml file
             PlayerSelectController playerSelectController = loader.getController();
-
-            // Pass pMainContent to the PlayerSelectController
             playerSelectController.setPMainContent(pMainContent);
 
-            // Set the loaded pane as the content of pMainContent
             pMainContent.getChildren().clear();
             pMainContent.getChildren().add(playerSelectPane);
         } catch (IOException e) {
@@ -132,10 +132,10 @@ public class EntryScreenController {
         }
     }
 
-
     @FXML
-    void btnLoadClick(MouseEvent event) {
+    void btnLoadClick(MouseEvent event) throws RemoteException {
         if (gameScreenController != null) {
+            stub.clearChatHistory();
             pMainContent.getChildren().clear();
             gameScreenController.setPMainContent(pMainContent);
             gameScreenController.loadGameState(pMainContent, root);
@@ -145,30 +145,28 @@ public class EntryScreenController {
     @FXML
     void btnReplayClick(MouseEvent event) {
         GameScreenController gameScreenController = GameScreenController.getInstance();
-        try {
-            FXMLLoader loader = new FXMLLoader(getClass().getResource("/hr/algebra/khruskoj2/GameReplay.fxml"));
-            Parent rootReplay = loader.load();
-
-            GameReplayController gameReplayController = loader.getController();
-            List<UserAnswer> userAnswers = gameScreenController.getUserAnswers();
-            gameReplayController.replay(userAnswers);
-
-            pMainContent.getChildren().clear();
-            pMainContent.getChildren().add(rootReplay);
-        } catch (IOException e) {
-            e.printStackTrace();
+        GameReplayController gameReplayController = GameReplayController.getInstance();
+        if (gameReplayController == null) {
+            try {
+                FXMLLoader loader = new FXMLLoader(getClass().getResource("/hr/algebra/khruskoj2/gameReplay.fxml"));
+                Parent rootReplay = loader.load();
+                gameReplayController = loader.getController();
+                gameReplayController.setRoot(rootReplay);
+                List<UserAnswer> userAnswers = gameScreenController.loadFromXML(replayFilePath);
+                gameReplayController.setUserAnswers(userAnswers);
+                gameReplayController.replay(userAnswers, pMainContent);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
         }
     }
-
 
     @FXML
     void btnDocumentationClick(MouseEvent event) {
         try {
-            // Load the documentation.fxml file
             FXMLLoader loader = new FXMLLoader(getClass().getResource("/hr/algebra/khruskoj2/documentation.fxml"));
             Pane documentationPane = loader.load();
 
-            // Set the loaded pane as the content of pMainContent
             pMainContent.getChildren().clear();
             pMainContent.getChildren().add(documentationPane);
         } catch (IOException e) {
@@ -179,11 +177,9 @@ public class EntryScreenController {
     @FXML
     void btnLeaderboardClick(MouseEvent event) {
         try {
-            // Load the leaderboards.fxml file
             FXMLLoader loader = new FXMLLoader(getClass().getResource("/hr/algebra/khruskoj2/leaderboards.fxml"));
             Pane leaderboardsPane = loader.load();
 
-            // Set the loaded pane as the content of pMainContent
             pMainContent.getChildren().clear();
             pMainContent.getChildren().add(leaderboardsPane);
         } catch (IOException e) {
@@ -193,15 +189,15 @@ public class EntryScreenController {
 
     @FXML
     void btnExitClick(MouseEvent event) {
-        // Close the entire application
         System.exit(0);
     }
 
     @FXML
-    public void initialize() {
+    public void initialize() throws RemoteException, NotBoundException {
         lblPaused.setVisible(false);
         btnContinue.setDisable(true);
         btnPause.setDisable(true);
+        Registry registry = LocateRegistry.getRegistry("localhost", 1919);
+        stub = (ChatService) registry.lookup("hr.algebra.khruskoj2.rmiserver");
     }
-
 }
