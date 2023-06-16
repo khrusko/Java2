@@ -13,11 +13,6 @@
                 <Font name="Berlin Sans FB Demi Bold" size="36.0" />
             </font>
         </Label>
-        <Label fx:id="btnStart" layoutX="86.0" layoutY="58.0" onMouseClicked="#btnStartClick" prefHeight="38.0" prefWidth="110.0" text="Start" textFill="#15d71f">
-            <font>
-                <Font name="Berlin Sans FB Demi Bold" size="32.0" />
-            </font>
-        </Label>
         <Label fx:id="btnExit" layoutX="96.0" layoutY="352.0" onMouseClicked="#btnExitClick" prefHeight="38.0" prefWidth="62.0" text="Exit" textFill="#f20000">
             <font>
                 <Font name="Berlin Sans FB Demi Bold" size="32.0" />
@@ -28,10 +23,7 @@
                 <Font name="Berlin Sans FB Demi Bold" size="41.0" />
             </font>
         </Label>
-        <Pane fx:id="pMainContent" layoutX="253.0" prefHeight="400.0" prefWidth="788.0" style="-fx-background-color: purple;">
-         <children>
-
-         </children></Pane>
+        <Pane fx:id="pMainContent" layoutX="253.0" prefHeight="400.0" prefWidth="788.0" style="-fx-background-color: purple;" />
         <Label fx:id="btnDocumentation" layoutX="26.0" layoutY="304.0" onMouseClicked="#btnDocumentationClick" prefHeight="38.0" prefWidth="201.0" text="Documentation" textFill="WHITE">
             <font>
                 <Font name="Berlin Sans FB Demi Bold" size="28.0" />
@@ -53,20 +45,30 @@
             </font>
         </Label>
       <Line endX="100.0" layoutX="126.0" layoutY="57.0" startX="-100.0" />
-      <Label fx:id="btnSave" layoutX="91.0" layoutY="116.0" onMouseClicked="#btnSaveClick" prefHeight="38.0" prefWidth="73.0" text="Save" textFill="#d0d0d0">
+      <Label fx:id="btnSave" layoutX="90.0" layoutY="134.0" onMouseClicked="#btnSaveClick" prefHeight="38.0" prefWidth="73.0" text="Save" textFill="#d0d0d0">
          <font>
             <Font name="Berlin Sans FB Demi Bold" size="32.0" />
          </font>
       </Label>
-      <Label fx:id="btnLoad" layoutX="90.0" layoutY="154.0" onMouseClicked="#btnLoadClick" prefHeight="38.0" prefWidth="73.0" text="Load" textFill="#d0d0d0">
+      <Label fx:id="btnLoad" layoutX="90.0" layoutY="172.0" onMouseClicked="#btnLoadClick" prefHeight="38.0" prefWidth="73.0" text="Load" textFill="#d0d0d0">
          <font>
             <Font name="Berlin Sans FB Demi Bold" size="32.0" />
          </font>
       </Label>
-      <Label fx:id="btnReplay" layoutX="75.0" layoutY="207.0" onMouseClicked="#btnReplayClick" prefHeight="38.0" prefWidth="104.0" text="Replay" textFill="#5292c7">
+      <Label fx:id="btnReplay" layoutX="75.0" layoutY="217.0" onMouseClicked="#btnReplayClick" prefHeight="38.0" prefWidth="104.0" text="Replay" textFill="#5292c7">
          <font>
             <Font name="Berlin Sans FB Demi Bold" size="32.0" />
          </font>
       </Label>
+      <Label fx:id="btnSingleplayer" layoutX="35.0" layoutY="57.0" onMouseClicked="#btnSingleplayerClick" prefHeight="38.0" prefWidth="183.0" text="Singleplayer" textFill="#15d71f">
+         <font>
+            <Font name="Berlin Sans FB Demi Bold" size="32.0" />
+         </font>
+      </Label>
+        <Label fx:id="btnStart" layoutX="42.0" layoutY="96.0" onMouseClicked="#btnStartClick" prefHeight="38.0" prefWidth="169.0" text="Multiplayer" textFill="#15d71f">
+            <font>
+                <Font name="Berlin Sans FB Demi Bold" size="32.0" />
+            </font>
+        </Label>
     </children>
 </AnchorPane>

@@ -3,6 +3,7 @@ package hr.algebra.khruskoj2.controller;
 import hr.algebra.khruskoj2.model.GameState;
 import hr.algebra.khruskoj2.model.UserAnswer;
 import hr.algebra.khruskoj2.rmiserver.ChatService;
+import hr.algebra.khruskoj2.server.Client;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
@@ -25,6 +26,8 @@ public class EntryScreenController {
 
     @FXML
     private Label btnStart;
+    @FXML
+    private Label btnSingleplayer;
 
     @FXML
     private Label btnExit;
@@ -60,8 +63,10 @@ public class EntryScreenController {
 
     ChatService stub = null;
 
+    public static String typeOfGame;
 
     private GameScreenController gameScreenController;
+    private Client client;
 
     public void setGameScreenController(GameScreenController gameScreenController, Parent gameScreenRoot) {
         this.gameScreenController = gameScreenController;
@@ -70,14 +75,12 @@ public class EntryScreenController {
 
     public void setGameScreenController(GameScreenController gameScreenController) {
         this.gameScreenController = gameScreenController;
-
     }
 
     @FXML
     void btnStartClick(MouseEvent event) throws RemoteException {
+        typeOfGame = "multiplayer";
         stub.clearChatHistory();
-        btnStart.setText("Restart");
-        btnStart.setLayoutX(73.0);
         btnPause.setDisable(false);
         btnContinue.setDisable(true);
         EntryScreenController entryScreenController = new EntryScreenController();
@@ -92,6 +95,32 @@ public class EntryScreenController {
 
             pMainContent.getChildren().clear();
             pMainContent.getChildren().add(playerSelectPane);
+
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    @FXML
+    void btnSingleplayerClick(MouseEvent event) throws RemoteException {
+
+        typeOfGame = "singleplayer";
+        stub.clearChatHistory();
+        btnPause.setDisable(false);
+        btnContinue.setDisable(true);
+        EntryScreenController entryScreenController = new EntryScreenController();
+        entryScreenController.setGameScreenController(gameScreenController);
+
+        try {
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/hr/algebra/khruskoj2/playerSelect.fxml"));
+            Pane playerSelectPane = loader.load();
+
+            PlayerSelectController playerSelectController = loader.getController();
+            playerSelectController.setPMainContent(pMainContent);
+
+            pMainContent.getChildren().clear();
+            pMainContent.getChildren().add(playerSelectPane);
+
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -125,7 +154,7 @@ public class EntryScreenController {
                 int currentQuestionIndex = gameScreenController.getCurrentQuestionIndex();
                 GameState gameState = new GameState(currentQuestionIndex, userAnswers);
                 objectOutputStream.writeObject(gameState);
-                System.out.println("Game state saved.");
+                System.out.println("Game state saved");
             } catch (IOException e) {
                 e.printStackTrace();
             }
@@ -139,6 +168,7 @@ public class EntryScreenController {
             pMainContent.getChildren().clear();
             gameScreenController.setPMainContent(pMainContent);
             gameScreenController.loadGameState(pMainContent, root);
+            System.out.println("Game state loaded");
         }
     }
 
@@ -152,7 +182,9 @@ public class EntryScreenController {
                 Parent rootReplay = loader.load();
                 gameReplayController = loader.getController();
                 gameReplayController.setRoot(rootReplay);
+
                 List<UserAnswer> userAnswers = gameScreenController.loadFromXML(replayFilePath);
+
                 gameReplayController.setUserAnswers(userAnswers);
                 gameReplayController.replay(userAnswers, pMainContent);
             } catch (IOException e) {
@@ -186,6 +218,7 @@ public class EntryScreenController {
             e.printStackTrace();
         }
     }
+
 
     @FXML
     void btnExitClick(MouseEvent event) {

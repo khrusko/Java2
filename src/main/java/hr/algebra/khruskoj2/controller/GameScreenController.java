@@ -5,6 +5,7 @@ import hr.algebra.khruskoj2.model.GameState;
 import hr.algebra.khruskoj2.model.Question;
 import hr.algebra.khruskoj2.model.UserAnswer;
 import hr.algebra.khruskoj2.rmiserver.ChatService;
+import hr.algebra.khruskoj2.server.Client;
 import javafx.animation.PauseTransition;
 import javafx.application.Platform;
 import javafx.concurrent.Task;
@@ -83,6 +84,8 @@ public class GameScreenController {
     ChatService stub = null;
     private ScheduledExecutorService chatRefreshExecutor;
     private ScheduledFuture<?> chatRefreshTask;
+    private volatile DocumentBuilderFactory documentBuilderFactory;
+    private Client client;
 
     public static GameScreenController getInstance() {
         return instance;
@@ -138,7 +141,14 @@ public class GameScreenController {
     }
 
     private void checkAnswer(String selectedAnswer) {
-
+        if (EntryScreenController.typeOfGame=="multiplayer") {
+            try {
+                client.sendPlayerAnswer(player1Name, selectedAnswer);
+                client.setQuestionNumber(currentQuestionIndex + 1);
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        }
         Question currentQuestion = questions.get(currentQuestionIndex);
         String correctAnswer = currentQuestion.getCorrectAnswer();
 
@@ -160,8 +170,8 @@ public class GameScreenController {
             btnAnswer4.setStyle(correctStyle);
         }
 
-        Question userQuestion = questions.get(currentQuestionIndex);
-        userAnswers.add(new UserAnswer(userQuestion, selectedAnswer, player1Name));
+
+        userAnswers.add(new UserAnswer(currentQuestion, selectedAnswer, player1Name));
 
         if (selectedAnswer.equals(correctAnswer)) {
             // Answer correct
@@ -175,10 +185,10 @@ public class GameScreenController {
                         // All questions have been answered
                         showResultScreen();
                     }
-                    btnAnswer1.setStyle(defaultStyle);
-                    btnAnswer2.setStyle(defaultStyle);
-                    btnAnswer3.setStyle(defaultStyle);
-                    btnAnswer4.setStyle(defaultStyle);
+//                    btnAnswer1.setStyle(defaultStyle);
+//                    btnAnswer2.setStyle(defaultStyle);
+//                    btnAnswer3.setStyle(defaultStyle);
+//                    btnAnswer4.setStyle(defaultStyle);
                 });
                 delay.play();
             });
@@ -206,10 +216,10 @@ public class GameScreenController {
                         // All questions have been answered
                         showResultScreen();
                     }
-                    btnAnswer1.setStyle(defaultStyle);
-                    btnAnswer2.setStyle(defaultStyle);
-                    btnAnswer3.setStyle(defaultStyle);
-                    btnAnswer4.setStyle(defaultStyle);
+//                    btnAnswer1.setStyle(defaultStyle);
+//                    btnAnswer2.setStyle(defaultStyle);
+//                    btnAnswer3.setStyle(defaultStyle);
+//                    btnAnswer4.setStyle(defaultStyle);
                 });
                 delay.play();
             });
@@ -218,9 +228,82 @@ public class GameScreenController {
 
 
     private void showNextQuestion() {
-        currentQuestionIndex++;
-        showCurrentQuestion();
-        answerSelected = false;
+        Question currentQuestion = questions.get(currentQuestionIndex);
+        String correctAnswer = currentQuestion.getCorrectAnswer();
+        if (EntryScreenController.typeOfGame.equals("multiplayer")) {
+            Thread thread = new Thread(() -> {
+                boolean bothAnswered=false;
+                disableButtons();
+                while (true) {
+                    try {
+                        Thread.sleep(250);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                    bothAnswered = client.isBothAnswered();
+                    if (bothAnswered) {
+                        break;
+                    }
+                }
+
+                // UI Thread update
+                Platform.runLater(() -> {
+                    client.setBothAnswered(false);
+                    enableButtons();
+                    currentQuestionIndex++;
+                    showCurrentQuestion();
+                    answerSelected = false;
+                });
+            });
+            thread.start();
+        }
+        else {
+            enableButtons();
+            currentQuestionIndex++;
+            showCurrentQuestion();
+            answerSelected = false;
+        }
+    }
+
+    private void setCorrectButtonStyle(String correctAnswer) {
+        String defaultStyle = "-fx-background-color: linear-gradient(#686868, #454545); -fx-background-radius: 10px; -fx-border-radius: 10px; -fx-alignment: center;";
+        String correctStyle = "-fx-background-color: green; -fx-background-radius: 10px; -fx-border-radius: 10px; -fx-alignment: center;";
+
+        // Reset all buttons to the default style
+        btnAnswer1.setStyle(defaultStyle);
+        btnAnswer2.setStyle(defaultStyle);
+        btnAnswer3.setStyle(defaultStyle);
+        btnAnswer4.setStyle(defaultStyle);
+
+        // Set the correct button's style based on the correctAnswer
+        if (correctAnswer.equals(btnAnswer1.getText())) {
+            btnAnswer1.setStyle(correctStyle);
+        } else if (correctAnswer.equals(btnAnswer2.getText())) {
+            btnAnswer2.setStyle(correctStyle);
+        } else if (correctAnswer.equals(btnAnswer3.getText())) {
+            btnAnswer3.setStyle(correctStyle);
+        } else {
+            btnAnswer4.setStyle(correctStyle);
+        }
+    }
+
+    private void disableButtons() {
+        btnAnswer1.setMouseTransparent(true);
+        btnAnswer2.setMouseTransparent(true);
+        btnAnswer3.setMouseTransparent(true);
+        btnAnswer4.setMouseTransparent(true);
+    }
+
+    private void enableButtons() {
+        String defaultStyle = "-fx-background-color: linear-gradient(#686868, #454545); -fx-background-radius: 10px; -fx-border-radius: 10px; -fx-alignment: center;";
+        btnAnswer1.setStyle(defaultStyle);
+        btnAnswer2.setStyle(defaultStyle);
+        btnAnswer3.setStyle(defaultStyle);
+        btnAnswer4.setStyle(defaultStyle);
+        btnAnswer1.setMouseTransparent(false);
+        btnAnswer2.setMouseTransparent(false);
+        btnAnswer3.setMouseTransparent(false);
+        btnAnswer4.setMouseTransparent(false);
     }
 
     public void showCurrentQuestion() {
@@ -231,7 +314,7 @@ public class GameScreenController {
                 lblQuestion.setText(currentQuestion.getQuestion());
                 lblQuestionNumber.setText("QUESTION " + (currentQuestionIndex + 1) + "/15");
 
-                List<String> answerOptions = new ArrayList<>(currentQuestion.getWrongAnswers()); // Create a new list for answer options
+                List<String> answerOptions = new ArrayList<>(currentQuestion.getWrongAnswers()); // Create a new list to shuffle
                 answerOptions.add(currentQuestion.getCorrectAnswer());
                 Collections.shuffle(answerOptions);
 
@@ -248,6 +331,7 @@ public class GameScreenController {
 
     public void showResultScreen() {
         saveUserAnswersForReplay(userAnswers);
+
         try {
             FXMLLoader loader = new FXMLLoader(getClass().getResource("/hr/algebra/khruskoj2/resultScreen.fxml"));
             Parent root1 = loader.load();
@@ -264,6 +348,7 @@ public class GameScreenController {
             e.printStackTrace();
         }
     }
+
 
     private void saveUserAnswersForReplay(List<UserAnswer> userAnswers) {
         GameReplayController gameReplayController = GameReplayController.getInstance();
@@ -285,64 +370,70 @@ public class GameScreenController {
     }
 
     public void saveToXML(List<UserAnswer> userAnswers, String filePath) {
-        try {
-            DocumentBuilderFactory documentBuilderFactory = DocumentBuilderFactory.newInstance();
-            DocumentBuilder documentBuilder = documentBuilderFactory.newDocumentBuilder();
 
-            Document xmlDocument = documentBuilder.newDocument();
-
-            Element rootElement = xmlDocument.createElement("UserAnswers");
-            xmlDocument.appendChild(rootElement);
-
-            for (UserAnswer userAnswer : userAnswers) {
-                Element userAnswerElement = xmlDocument.createElement("UserAnswer");
-
-                Element questionTextElement = xmlDocument.createElement("QuestionText");
-                Node questionTextNode = xmlDocument.createTextNode(userAnswer.getQuestionText());
-                questionTextElement.appendChild(questionTextNode);
-                userAnswerElement.appendChild(questionTextElement);
-
-                Element correctAnswerElement = xmlDocument.createElement("CorrectAnswer");
-                Node correctAnswerTextNode = xmlDocument.createTextNode(userAnswer.getCorrectAnswer());
-                correctAnswerElement.appendChild(correctAnswerTextNode);
-                userAnswerElement.appendChild(correctAnswerElement);
-
-                Element selectedAnswerElement = xmlDocument.createElement("SelectedAnswer");
-                Node selectedAnswerTextNode = xmlDocument.createTextNode(userAnswer.getSelectedAnswer());
-                selectedAnswerElement.appendChild(selectedAnswerTextNode);
-                userAnswerElement.appendChild(selectedAnswerElement);
-
-                Element wrongAnswersElement = xmlDocument.createElement("WrongAnswers");
-                for (String wrongAnswer : userAnswer.getWrongAnswers()) {
-                    Element wrongAnswerElement = xmlDocument.createElement("WrongAnswer");
-                    Node wrongAnswerTextNode = xmlDocument.createTextNode(wrongAnswer);
-                    wrongAnswerElement.appendChild(wrongAnswerTextNode);
-                    wrongAnswersElement.appendChild(wrongAnswerElement);
+            try {
+                if (userAnswers.size() != 15) {
+                    System.out.println("Invalid number of user answers. Expected 15, got: " + userAnswers.size());
+                    return;
                 }
-                userAnswerElement.appendChild(wrongAnswersElement);
 
-                rootElement.appendChild(userAnswerElement);
+                documentBuilderFactory = DocumentBuilderFactory.newInstance();
+                DocumentBuilder documentBuilder = documentBuilderFactory.newDocumentBuilder();
+
+                Document xmlDocument = documentBuilder.newDocument();
+
+                Element rootElement = xmlDocument.createElement("UserAnswers");
+                xmlDocument.appendChild(rootElement);
+
+                for (UserAnswer userAnswer : userAnswers) {
+                    Element userAnswerElement = xmlDocument.createElement("UserAnswer");
+
+                    Element questionTextElement = xmlDocument.createElement("QuestionText");
+                    Node questionTextNode = xmlDocument.createTextNode(userAnswer.getQuestionText());
+                    questionTextElement.appendChild(questionTextNode);
+                    userAnswerElement.appendChild(questionTextElement);
+
+                    Element correctAnswerElement = xmlDocument.createElement("CorrectAnswer");
+                    Node correctAnswerTextNode = xmlDocument.createTextNode(userAnswer.getCorrectAnswer());
+                    correctAnswerElement.appendChild(correctAnswerTextNode);
+                    userAnswerElement.appendChild(correctAnswerElement);
+
+                    Element selectedAnswerElement = xmlDocument.createElement("SelectedAnswer");
+                    Node selectedAnswerTextNode = xmlDocument.createTextNode(userAnswer.getSelectedAnswer());
+                    selectedAnswerElement.appendChild(selectedAnswerTextNode);
+                    userAnswerElement.appendChild(selectedAnswerElement);
+
+                    Element wrongAnswersElement = xmlDocument.createElement("WrongAnswers");
+                    for (String wrongAnswer : userAnswer.getWrongAnswers()) {
+                        Element wrongAnswerElement = xmlDocument.createElement("WrongAnswer");
+                        Node wrongAnswerTextNode = xmlDocument.createTextNode(wrongAnswer);
+                        wrongAnswerElement.appendChild(wrongAnswerTextNode);
+                        wrongAnswersElement.appendChild(wrongAnswerElement);
+                    }
+                    userAnswerElement.appendChild(wrongAnswersElement);
+
+                    rootElement.appendChild(userAnswerElement);
+                }
+
+                Transformer transformer = TransformerFactory.newInstance().newTransformer();
+                Source xmlSource = new DOMSource(xmlDocument);
+                Result xmlResult = new StreamResult(new File(filePath));
+
+                transformer.transform(xmlSource, xmlResult);
+                System.out.println("File '" + filePath + "' was created!");
+
+            } catch (Exception ex) {
+                ex.printStackTrace();
             }
-
-            Transformer transformer = TransformerFactory.newInstance().newTransformer();
-            Source xmlSource = new DOMSource(xmlDocument);
-            Result xmlResult = new StreamResult(new File(filePath));
-
-            transformer.transform(xmlSource, xmlResult);
-            System.out.println("File '" + filePath + "' was created!");
-
-        } catch (Exception ex) {
-            ex.printStackTrace();
-        }
     }
 
-    public List<UserAnswer> loadFromXML(String filePath) {
-        List<UserAnswer> userAnswers = new ArrayList<>();
 
+    public List<UserAnswer> loadFromXML(String filePath) {
+        enableButtons();
         try {
             File file = new File(filePath);
-            DocumentBuilderFactory dbFactory = DocumentBuilderFactory.newInstance();
-            DocumentBuilder dBuilder = dbFactory.newDocumentBuilder();
+            documentBuilderFactory = DocumentBuilderFactory.newInstance();
+            DocumentBuilder dBuilder = documentBuilderFactory.newDocumentBuilder();
             Document doc = dBuilder.parse(file);
             doc.getDocumentElement().normalize();
 
@@ -370,6 +461,7 @@ public class GameScreenController {
         } catch (Exception e) {
             e.printStackTrace();
         }
+
 
         return userAnswers;
     }
@@ -412,8 +504,11 @@ public class GameScreenController {
     }
 
     public void loadGameState(Pane pMainContent, Parent root) {
+        disableChatAccordingToGameType();
         pMainContent.getChildren().clear();
-        try (FileInputStream fileInputStream = new FileInputStream("gameSaveState.ser"); ObjectInputStream objectInputStream = new ObjectInputStream(fileInputStream)) {
+        enableButtons();
+        try (FileInputStream fileInputStream = new FileInputStream("gameSaveState.ser");
+             ObjectInputStream objectInputStream = new ObjectInputStream(fileInputStream)) {
             GameState gameState = (GameState) objectInputStream.readObject();
 
             currentQuestionIndex = gameState.getCurrentQuestionIndex();
@@ -437,6 +532,16 @@ public class GameScreenController {
         }
     }
 
+    private void disableChatAccordingToGameType() {
+        if (EntryScreenController.typeOfGame == "singleplayer") {
+            chatListView.setDisable(true);
+            messageTextField.setDisable(true);
+        } else if (EntryScreenController.typeOfGame == "multiplayer") {
+            chatListView.setDisable(false);
+            messageTextField.setDisable(false);
+        }
+    }
+
     public synchronized void loadQuestionsAsync() {
         Task<List<Question>> task = new Task<List<Question>>() {
             @Override
@@ -454,20 +559,30 @@ public class GameScreenController {
 
     @FXML
     public void initialize() throws RemoteException, NotBoundException {
-        instance = this;
         executorService = Executors.newSingleThreadExecutor();
+        instance = this;
         loadQuestionsAsync();
         if (userAnswers == null) {
             userAnswers = new ArrayList<>();
         }
-        Registry registry = LocateRegistry.getRegistry("localhost", 1919);
-        stub = (ChatService) registry.lookup("hr.algebra.khruskoj2.rmiserver");
-
-        startChatRefresh();
+        if (EntryScreenController.typeOfGame == "singleplayer") {
+            chatListView.setDisable(true);
+            messageTextField.setDisable(true);
+        } else if (EntryScreenController.typeOfGame == "multiplayer") {
+            chatListView.setDisable(false);
+            messageTextField.setDisable(false);
+            Registry registry = LocateRegistry.getRegistry("localhost", 1919);
+            stub = (ChatService) registry.lookup("hr.algebra.khruskoj2.rmiserver");
+            startChatRefresh();
+        }
     }
 
     public void shutdownExecutorService() {
         executorService.shutdownNow();
         stopChatRefresh();
+    }
+
+    public void setClient(Client client) {
+        this.client = client;
     }
 }

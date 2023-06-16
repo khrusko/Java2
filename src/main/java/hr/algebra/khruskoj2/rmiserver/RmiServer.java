@@ -10,6 +10,9 @@ import java.rmi.registry.Registry;
 import java.rmi.server.UnicastRemoteObject;
 
 public class RmiServer {
+    private static Registry registry;
+    private static ChatService skeleton;
+
     public static void main(String[] args) {
         try {
             String rmiPortString = JNDIHelper.getConfigurationParameter("rmi.port");
@@ -17,9 +20,9 @@ public class RmiServer {
             String random_port_hint = JNDIHelper.getConfigurationParameter("random_port_hint");
             String socket_port = JNDIHelper.getConfigurationParameter("socket_port");
 
-            Registry registry = LocateRegistry.createRegistry(Integer.parseInt(rmiPortString));
+            registry = LocateRegistry.createRegistry(Integer.parseInt(rmiPortString));
             ChatService chatService = new ChatServiceImpl();
-            ChatService skeleton = (ChatService) UnicastRemoteObject.exportObject(chatService, Integer.parseInt(random_port_hint));
+            skeleton = (ChatService) UnicastRemoteObject.exportObject(chatService, Integer.parseInt(random_port_hint));
             registry.rebind(rmiObjectName, skeleton);
             System.err.println("Object registered in RMI registry");
         } catch (RemoteException e) {

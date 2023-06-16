@@ -1,7 +1,7 @@
 package hr.algebra.khruskoj2.controller;
 
 import hr.algebra.khruskoj2.data.LeaderboardData;
-import javafx.application.Platform;
+import hr.algebra.khruskoj2.model.UserAnswer;
 import javafx.beans.property.SimpleIntegerProperty;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
@@ -11,6 +11,7 @@ import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 public class LeaderboardsController {
@@ -47,25 +48,31 @@ public class LeaderboardsController {
 
     private ObservableList<LeaderboardEntry> leaderboardEntries;
 
+    private ResultScreenController resultScreenController;
+
     public void initialize() {
-        Platform.runLater(() -> {
-            ObservableList<LeaderboardEntry> allEntries = LeaderboardData.getInstance().getLeaderboardEntries();
+        resultScreenController = resultScreenController.getInstance();
+        ObservableList<LeaderboardEntry> allEntries = LeaderboardData.getInstance().getLeaderboardEntries();
 
-            // Filter Distinct highest
-            Map<String, LeaderboardEntry> highestScoringEntriesMap = new HashMap<>();
-            for (LeaderboardEntry entry : allEntries) {
-                highestScoringEntriesMap.compute(entry.getPlayer(), (player, currentEntry) ->
-                        currentEntry == null || entry.getScore() > currentEntry.getScore() ? entry : currentEntry);
-            }
+        // Filter Distinct highest
+        Map<String, LeaderboardEntry> highestScoringEntriesMap = new HashMap<>();
+        for (LeaderboardEntry entry : allEntries) {
+            highestScoringEntriesMap.compute(entry.getPlayer(), (player, currentEntry) ->
+                    currentEntry == null || entry.getScore() > currentEntry.getScore() ? entry : currentEntry);
+        }
 
-            leaderboardEntries = FXCollections.observableArrayList(highestScoringEntriesMap.values());
-            leaderboardEntries.sort((entry1, entry2) -> Integer.compare(entry2.getScore(), entry1.getScore()));
+        leaderboardEntries = FXCollections.observableArrayList(highestScoringEntriesMap.values());
+        leaderboardEntries.sort((entry1, entry2) -> Integer.compare(entry2.getScore(), entry1.getScore()));
 
-            rankColumn.setCellValueFactory(cellData -> new SimpleIntegerProperty(leaderboardEntries.indexOf(cellData.getValue()) + 1).asObject());
-            playerColumn.setCellValueFactory(cellData -> new SimpleStringProperty(cellData.getValue().getPlayer()));
-            scoreColumn.setCellValueFactory(cellData -> new SimpleIntegerProperty(cellData.getValue().getScore()).asObject());
+        rankColumn.setCellValueFactory(cellData -> new SimpleIntegerProperty(leaderboardEntries.indexOf(cellData.getValue()) + 1).asObject());
+        playerColumn.setCellValueFactory(cellData -> new SimpleStringProperty(cellData.getValue().getPlayer()));
+        scoreColumn.setCellValueFactory(cellData -> new SimpleIntegerProperty(cellData.getValue().getScore()).asObject());
 
-            tvLeaderboard.setItems(leaderboardEntries);
-        });
+        tvLeaderboard.setItems(leaderboardEntries);
+        tvLeaderboard.refresh();
+    }
+
+    public void displayResultData(int correctAnswers, int wrongAnswers, String player1Name, String player2Name, List<UserAnswer> userAnswers) {
+        resultScreenController.setResultData(correctAnswers, wrongAnswers, player1Name, player2Name, userAnswers);
     }
 }
